@@ -9,7 +9,7 @@ const client : Discord.Client = new Discord.Client({ intents: [Discord.GatewayIn
 
 // Create a new Collection where the key is the command name and the value is the exported module
 
-declare module 'discord.js' { interface Client { commands } };
+declare module 'discord.js' { interface Client { commands: Discord.Collection<string, any> } }
 
 client.commands = new Discord.Collection<string, any>();
 
@@ -18,11 +18,12 @@ const foldersPath : string = path.join(__dirname, 'commands');
 const commandFolders : string[] = fs.readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
-	const commandsPath = path.join(foldersPath, folder);
-	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-	for (const file of commandFiles) {
-		const filePath = path.join(commandsPath, file);
-		const command = require(filePath);
+	const commandsPath: string = path.join(foldersPath, folder);
+	const commandFiles: string[] = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+	let file;
+	for (file of commandFiles) {
+		const filePath: string = path.join(commandsPath, file);
+		const command: any = require(filePath);
 		// Set a new item in the Collection with the key as the command name and the value as the exported module
 		if ('data' in command && 'execute' in command) {
 			client.commands.set(command.data.name, command);
@@ -45,4 +46,4 @@ for (const file of eventFiles) {
 	}
 }
 
-client.login(token);
+client.login(token).then((r: string) : void => {});
