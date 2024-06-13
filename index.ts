@@ -46,4 +46,4 @@ for (const file of eventFiles) {
 	}
 }
 
-client.login(token).then((r: string) : void => {});
+client.login(token).then((r: string) : void => {console.log(r)});
