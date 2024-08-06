@@ -16,10 +16,10 @@ export class BlackjackUtils {
 
     start(bet: number) {
         this.cards = new CardUtils(50);
-        this.cards.shuffle(7);
+        this.cards.shuffle(2);
 
         this.playerHand = this.cards.deal(2);
-        this.dealerHand = this.cards.deal(2);
+        this.dealerHand = this.cards.deal(1);
 
         console.log(this.dealerHand);
         console.log(this.playerHand);
@@ -52,7 +52,7 @@ export class BlackjackUtils {
         for(let i = 0; i < hand.length; i++) {
             // @ts-ignore
             toReturn += `${EmojiUtils.nums[hand[i].value.toString()]}${EmojiUtils.suits[hand[i].suit.toLowerCase()]}`;
-            if(i !== hand.length - 1) toReturn += ` and `;
+            if(i !== hand.length - 1) toReturn += `and `;
         }
 
         return toReturn;
