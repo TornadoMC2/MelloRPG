@@ -14,7 +14,7 @@ export class BlackjackUtils {
     }
 
 
-    start(bet: number) {
+    start() {
         this.cards = new CardUtils(50);
         this.cards.shuffle(2);
 

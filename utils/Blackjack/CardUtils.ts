@@ -7,7 +7,7 @@ export class CardUtils {
 
         this.deck = [];
         this.dealt_cards = [];
-        for(let i = 0; i < decks; i++) this.gen();
+        for(let i : number = 0; i < decks; i++) this.gen();
 
     }
 
@@ -34,7 +34,7 @@ export class CardUtils {
         return this.deck;
     }
 
-    shuffle(amount : number = 1) {
+    shuffle(amount : number = 1) : void {
         for (let i : number = 0; i < amount; i++) {
             for (let c : number = this.deck.length -1; c >= 0; c--){
                 const tempVal : object = this.deck[c];
@@ -48,7 +48,7 @@ export class CardUtils {
         }
     }
 
-    deal(num_cards: number) {
+    deal(num_cards: number) : object[] {
         let cards : object[] = [];
         for (let c = 0; c < num_cards; c++) {
             let dealt_card : object | undefined = this.deck.shift();
