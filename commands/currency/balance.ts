@@ -1,5 +1,6 @@
-import {CommandInteraction, SlashCommandBuilder} from "discord.js";
+import { CommandInteraction, SlashCommandBuilder } from "discord.js";
 import UserInfo from "../../models/userInfo";
+import { currencyFormatter } from "../../utils/CurrencyUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,13 +14,13 @@ module.exports = {
             const newUser = new UserInfo({
                 uid: interaction.user.id,
             })
-            await newUser.save().catch(() => {});
+            await newUser.save().catch(() : void => {});
             userInfo = await UserInfo.findOne({uid: interaction.user.id});
         }
         // @ts-ignore
         let balance : number = userInfo.balance;
 
-        await interaction.reply(`Your balance is: ${balance}`);
+        await interaction.reply({content: `Your balance is: \`${currencyFormatter.format(balance)}\``, ephemeral: true});
 
     }
 }

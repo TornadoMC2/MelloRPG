@@ -6,8 +6,8 @@ import {
     ButtonStyle, ActionRow, ActionRowBuilder
 } from "discord.js";
 import {BlackjackUtils} from "../../utils/Blackjack/BlackjackUtils";
-import {EmojiUtils} from "../../utils/EmojiUtils";
 import UserInfo from "../../models/userInfo";
+import {currencyFormatter} from "../../utils/CurrencyUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,20 +18,13 @@ module.exports = {
                 .setDescription('The amount to bet')
                 .setRequired(true)),
     async execute(interaction: CommandInteraction): Promise<void> {
-
-
-
+        
         let userInfo = await UserInfo.findOne({uid: interaction.user.id});
-        console.log(userInfo);
-        console.log(interaction.user.id);
-
 
         if(!userInfo) {
             const newUser = new UserInfo({
                 uid: interaction.user.id,
             })
-
-
 
             await newUser.save().catch(() => {});
             userInfo = await UserInfo.findOne({uid: interaction.user.id});
@@ -39,9 +32,6 @@ module.exports = {
 
         // @ts-ignore
         let balance : number = userInfo.balance;
-
-        console.log(balance);
-
 
         // @ts-ignore
         let bet : number = parseInt(interaction.options.getString('bet'));
@@ -51,7 +41,7 @@ module.exports = {
             return;
         }
         if(bet > balance) {
-            await interaction.reply({content: 'You do not have enough balance for this bet. Your balance is: \`$' + balance + "\`", ephemeral: true});
+            await interaction.reply({content: 'You do not have enough balance for this bet. Your balance is: ' + currencyFormatter.format(balance), ephemeral: true});
             return;
         }
 
@@ -77,14 +67,12 @@ module.exports = {
         let aceDealerHandValue : string = '';
 
         for(let i in bj.playerHand) {
-            // @ts-ignore
-            if(bj.playerHand[i].name2 === 'A') {
+            if(bj.playerHand[i].symbol === 'A') {
                 acePlayerHandValue = ` / ${playerHandValue - 10}`;
             }
         }
         for(let i in bj.dealerHand) {
-            // @ts-ignore
-            if(bj.dealerHand[i].name2 === 'A') {
+            if(bj.dealerHand[i].symbol === 'A') {
                 aceDealerHandValue = ` / ${dealerHandValue - 10}`;
             }
         }
@@ -96,7 +84,7 @@ module.exports = {
                 { name: `You | ${playerHandValue}${acePlayerHandValue}`, value: playerHandString },
                 { name: `Dealer | ${dealerHandValue}${aceDealerHandValue}`, value: dealerHandString }
             )
-            .setColor("Blue")
+            .setColor('Blue')
 
         let hit = new ButtonBuilder().setCustomId('hit').setLabel('Hit').setStyle(ButtonStyle.Primary)
 
@@ -135,30 +123,26 @@ module.exports = {
 
                     if (playerHandValue > 21) {
                         for (let i in bj.playerHand) {
-                            // @ts-ignore
-                            if (bj.playerHand[i].name2 === 'A') {
+                            if (bj.playerHand[i].symbol === 'A') {
                                 playerHandValue -= 10;
                             }
                         }
                     } else {
                         for (let i in bj.playerHand) {
-                            // @ts-ignore
-                            if (bj.playerHand[i].name2 === 'A') {
+                            if (bj.playerHand[i].symbol === 'A') {
                                 acePlayerHandValue = ` / ${playerHandValue - 10}`;
                             }
                         }
                     }
                     if (dealerHandValue > 21) {
                         for (let i in bj.dealerHand) {
-                            // @ts-ignore
-                            if (bj.dealerHand[i].name2 === 'A') {
+                            if (bj.dealerHand[i].symbol === 'A') {
                                 dealerHandValue -= 10;
                             }
                         }
                     } else {
                         for (let i in bj.dealerHand) {
-                            // @ts-ignore
-                            if (bj.dealerHand[i].name2 === 'A') {
+                            if (bj.dealerHand[i].symbol === 'A') {
                                 aceDealerHandValue = ` / ${dealerHandValue - 10}`;
                             }
                         }
@@ -172,7 +156,7 @@ module.exports = {
                                 {name: `You | ${playerHandValue} - BUST`, value: playerHandString},
                                 {name: `Dealer | ${dealerHandValue} - WINNER`, value: dealerHandString}
                             )
-                            .setColor("Blue")
+                            .setColor('Blue')
                         await selection.update({
                             embeds: [bjEmbed],
                             components: [],
@@ -187,7 +171,7 @@ module.exports = {
                                 {name: `You | ${playerHandValue}${acePlayerHandValue}`, value: playerHandString},
                                 {name: `Dealer | ${dealerHandValue}${aceDealerHandValue}`, value: dealerHandString}
                             )
-                            .setColor("Blue")
+                            .setColor('Blue')
 
                         await selection.update({
                             embeds: [bjEmbed],
@@ -202,15 +186,13 @@ module.exports = {
                         dealerHandValue = bj.getValue(bj.dealerHand)
                         if (dealerHandValue > 21) {
                             for (let i in bj.dealerHand) {
-                                // @ts-ignore
-                                if (bj.dealerHand[i].name2 === 'A') {
+                                if (bj.dealerHand[i].symbol === 'A') {
                                     dealerHandValue -= 10;
                                 }
                             }
                         } else {
                             for (let i in bj.dealerHand) {
-                                // @ts-ignore
-                                if (bj.dealerHand[i].name2 === 'A') {
+                                if (bj.dealerHand[i].symbol === 'A') {
                                     aceDealerHandValue = ` / ${dealerHandValue - 10}`;
                                 }
                             }
@@ -219,30 +201,26 @@ module.exports = {
 
                     if (playerHandValue > 21) {
                         for (let i in bj.playerHand) {
-                            // @ts-ignore
-                            if (bj.playerHand[i].name2 === 'A') {
+                            if (bj.playerHand[i].symbol === 'A') {
                                 playerHandValue -= 10;
                             }
                         }
                     } else {
                         for (let i in bj.playerHand) {
-                            // @ts-ignore
-                            if (bj.playerHand[i].name2 === 'A') {
+                            if (bj.playerHand[i].symbol === 'A') {
                                 acePlayerHandValue = ` / ${playerHandValue - 10}`;
                             }
                         }
                     }
                     if (dealerHandValue > 21) {
                         for (let i in bj.dealerHand) {
-                            // @ts-ignore
-                            if (bj.dealerHand[i].name2 === 'A') {
+                            if (bj.dealerHand[i].symbol === 'A') {
                                 dealerHandValue -= 10;
                             }
                         }
                     } else {
                         for (let i in bj.dealerHand) {
-                            // @ts-ignore
-                            if (bj.dealerHand[i].name2 === 'A') {
+                            if (bj.dealerHand[i].symbol === 'A') {
                                 aceDealerHandValue = ` / ${dealerHandValue - 10}`;
                             }
                         }
@@ -259,7 +237,7 @@ module.exports = {
                                 {name: `You | ${playerHandValue} - WINNER`, value: playerHandString},
                                 {name: `Dealer | ${dealerHandValue} - BUST`, value: dealerHandString}
                             )
-                            .setColor("Blue")
+                            .setColor('Blue')
                         // @ts-ignore
                         userInfo.balance += bet * 2;
                         // @ts-ignore
@@ -278,7 +256,7 @@ module.exports = {
                                     {name: `You | ${playerHandValue} - WINNER`, value: playerHandString},
                                     {name: `Dealer | ${dealerHandValue}`, value: dealerHandString}
                                 )
-                                .setColor("Blue")
+                                .setColor('Blue')
                             // @ts-ignore
                             userInfo.balance += bet * 2;
                             // @ts-ignore
@@ -296,7 +274,7 @@ module.exports = {
                                     {name: `You | ${playerHandValue}`, value: playerHandString},
                                     {name: `Dealer | ${dealerHandValue} - WINNER`, value: dealerHandString}
                                 )
-                                .setColor("Blue")
+                                .setColor('Blue')
 
                             return await selection.update({
                                 embeds: [bjEmbed],
@@ -311,7 +289,7 @@ module.exports = {
                                     {name: `You | ${playerHandValue} - PUSH`, value: playerHandString},
                                     {name: `Dealer | ${dealerHandValue} - PUSH`, value: dealerHandString}
                                 )
-                                .setColor("Blue")
+                                .setColor('Blue')
                             // @ts-ignore
                             userInfo.balance += bet;
                             // @ts-ignore

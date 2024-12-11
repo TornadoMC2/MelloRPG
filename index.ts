@@ -2,16 +2,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Discord from 'discord.js';
-import mongoose from "mongoose";
-//import { Client, Events, GatewayIntentBits } from 'discord.js';
 let { token } = require('./token.json');
-let { mongoURI } = require('./secrets.json');
 
 const client : Discord.Client = new Discord.Client({ intents: [Discord.GatewayIntentBits.Guilds] });
 
-// Connect to MongoDB
-// @ts-ignore
-mongoose.connect(mongoURI).then(r => {});
+
 // Create a new Collection where the key is the command name and the value is the exported module
 
 declare module 'discord.js' { interface Client { commands: Discord.Collection<string, any> } }

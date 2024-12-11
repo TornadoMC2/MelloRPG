@@ -1,7 +1,18 @@
 'use strict';
+
+export interface Card {
+    name: string;
+    suit: string;
+    value: string;
+    symbol: string;
+}
+
+
 export class CardUtils {
-    public deck: object[];
-    public dealt_cards : object[];
+
+
+    public deck: Card[];
+    public dealt_cards : Card[];
 
     constructor(decks: number) {
 
@@ -12,11 +23,11 @@ export class CardUtils {
     }
 
     gen() : void {
-        let card = (suit: string, value: string) : object => {
+        let card = (suit: string, value: string) : Card => {
             let name: string = value + ' of ' + suit;
             if (value.toUpperCase().includes('J') || value.toUpperCase().includes('Q') || value.toUpperCase().includes('K')) value = '10';
             if (value.toUpperCase().includes('A')) value = '11';
-            return { 'name': name, 'suit': suit, 'value': value, 'name2': name.charAt(0).toUpperCase() }
+            return { 'name': name, 'suit': suit, 'value': value, 'symbol': name.charAt(0).toUpperCase() }
         }
 
         let values: string[] = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
@@ -30,14 +41,14 @@ export class CardUtils {
 
     }
 
-    getDeck() : object[] {
+    getDeck() : Card[] {
         return this.deck;
     }
 
     shuffle(amount : number = 1) : void {
         for (let i : number = 0; i < amount; i++) {
             for (let c : number = this.deck.length -1; c >= 0; c--){
-                const tempVal : object = this.deck[c];
+                const tempVal : Card = this.deck[c];
                 let randomIndex : number = Math.floor(Math.random() * this.deck.length);
 
                 // ensures that the random index isn't the same as the current index. It runs the function again if this returns as true
@@ -48,10 +59,10 @@ export class CardUtils {
         }
     }
 
-    deal(num_cards: number) : object[] {
-        let cards : object[] = [];
+    deal(num_cards: number) : Card[] {
+        let cards : Card[] = [];
         for (let c = 0; c < num_cards; c++) {
-            let dealt_card : object | undefined = this.deck.shift();
+            let dealt_card : Card | undefined = this.deck.shift();
             // @ts-ignore
             cards.push(dealt_card);
             // @ts-ignore
@@ -59,7 +70,6 @@ export class CardUtils {
         }
         return cards
     }
-
 
     clearDeck() : void {
         this.deck = [];

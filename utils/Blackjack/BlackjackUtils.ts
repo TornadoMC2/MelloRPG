@@ -1,10 +1,10 @@
-import {CardUtils} from "./CardUtils";
+import {Card, CardUtils} from "./CardUtils";
 import {EmojiUtils} from "../EmojiUtils";
 
 export class BlackjackUtils {
 
-    public dealerHand: object[];
-    public playerHand: object[];
+    public dealerHand: Card[];
+    public playerHand: Card[];
     // @ts-ignore
     private cards : CardUtils;
 
