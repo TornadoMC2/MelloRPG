@@ -8,6 +8,7 @@ import {
 import {BlackjackUtils} from "../../utils/Blackjack/BlackjackUtils";
 import UserInfo from "../../models/userInfo";
 import {currencyFormatter} from "../../utils/CurrencyUtils";
+import {Card} from "../../utils/Blackjack/CardUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,8 +31,7 @@ module.exports = {
             userInfo = await UserInfo.findOne({uid: interaction.user.id});
         }
 
-        // @ts-ignore
-        let balance : number = userInfo.balance;
+        let balance : number = userInfo!.balance;
 
         // @ts-ignore
         let bet : number = parseInt(interaction.options.getString('bet'));
@@ -49,10 +49,9 @@ module.exports = {
 
         bj.start();
 
-        // @ts-ignore
-        userInfo.balance -= bet;
-        // @ts-ignore
-        await userInfo.save().catch(():void => {});
+
+        userInfo!.balance -= bet;
+        await userInfo!.save().catch(():void => {});
 
         // @ts-ignore
         //let ctn:string=`You have ${EmojiUtils.nums[bj.playerHand[0].value.toString()]}${EmojiUtils.suits[bj.playerHand[0].suit.toLowerCase()]} and ${EmojiUtils.nums[bj.playerHand[1].value.toString()]}${EmojiUtils.suits[bj.playerHand[1].suit.toLowerCase()]}\nWith a value \`${bj.getValue(bj.playerHand)}\``
@@ -86,9 +85,9 @@ module.exports = {
             )
             .setColor('Blue')
 
-        let hit = new ButtonBuilder().setCustomId('hit').setLabel('Hit').setStyle(ButtonStyle.Primary)
+        let hit : ButtonBuilder = new ButtonBuilder().setCustomId('hit').setLabel('Hit').setStyle(ButtonStyle.Primary)
 
-        let stand = new ButtonBuilder().setCustomId('stand').setLabel('Stand').setStyle(ButtonStyle.Secondary)
+        let stand : ButtonBuilder = new ButtonBuilder().setCustomId('stand').setLabel('Stand').setStyle(ButtonStyle.Secondary)
 
         let buttonRow : any = new ActionRowBuilder().addComponents(hit, stand)
 
@@ -111,7 +110,6 @@ module.exports = {
                     //bj.deal(bj.dealerHand, 1);
                     bj.deal(bj.playerHand, 1);
 
-
                     let playerHandString : string = bj.generateHandString(bj.playerHand);
                     let dealerHandString : string = bj.generateHandString(bj.dealerHand);
 
@@ -121,32 +119,8 @@ module.exports = {
                     let acePlayerHandValue: string = '';
                     let aceDealerHandValue: string = '';
 
-                    if (playerHandValue > 21) {
-                        for (let i in bj.playerHand) {
-                            if (bj.playerHand[i].symbol === 'A') {
-                                playerHandValue -= 10;
-                            }
-                        }
-                    } else {
-                        for (let i in bj.playerHand) {
-                            if (bj.playerHand[i].symbol === 'A') {
-                                acePlayerHandValue = ` / ${playerHandValue - 10}`;
-                            }
-                        }
-                    }
-                    if (dealerHandValue > 21) {
-                        for (let i in bj.dealerHand) {
-                            if (bj.dealerHand[i].symbol === 'A') {
-                                dealerHandValue -= 10;
-                            }
-                        }
-                    } else {
-                        for (let i in bj.dealerHand) {
-                            if (bj.dealerHand[i].symbol === 'A') {
-                                aceDealerHandValue = ` / ${dealerHandValue - 10}`;
-                            }
-                        }
-                    }
+                    [playerHandValue, acePlayerHandValue] = adjustHandValue(playerHandValue, bj.playerHand, acePlayerHandValue);
+                    [dealerHandValue, aceDealerHandValue] = adjustHandValue(dealerHandValue, bj.dealerHand, aceDealerHandValue);
 
                     if(playerHandValue > 21) {
                         let bjEmbed = new EmbedBuilder()
@@ -183,48 +157,14 @@ module.exports = {
                 } else if (selection.customId === 'stand') {
                     while(dealerHandValue < 17) {
                         bj.deal(bj.dealerHand, 1);
-                        dealerHandValue = bj.getValue(bj.dealerHand)
-                        if (dealerHandValue > 21) {
-                            for (let i in bj.dealerHand) {
-                                if (bj.dealerHand[i].symbol === 'A') {
-                                    dealerHandValue -= 10;
-                                }
-                            }
-                        } else {
-                            for (let i in bj.dealerHand) {
-                                if (bj.dealerHand[i].symbol === 'A') {
-                                    aceDealerHandValue = ` / ${dealerHandValue - 10}`;
-                                }
-                            }
-                        }
+                        dealerHandValue = bj.getValue(bj.dealerHand);
+
+                        [dealerHandValue, aceDealerHandValue] = adjustHandValue(dealerHandValue, bj.dealerHand, aceDealerHandValue);
+
                     }
 
-                    if (playerHandValue > 21) {
-                        for (let i in bj.playerHand) {
-                            if (bj.playerHand[i].symbol === 'A') {
-                                playerHandValue -= 10;
-                            }
-                        }
-                    } else {
-                        for (let i in bj.playerHand) {
-                            if (bj.playerHand[i].symbol === 'A') {
-                                acePlayerHandValue = ` / ${playerHandValue - 10}`;
-                            }
-                        }
-                    }
-                    if (dealerHandValue > 21) {
-                        for (let i in bj.dealerHand) {
-                            if (bj.dealerHand[i].symbol === 'A') {
-                                dealerHandValue -= 10;
-                            }
-                        }
-                    } else {
-                        for (let i in bj.dealerHand) {
-                            if (bj.dealerHand[i].symbol === 'A') {
-                                aceDealerHandValue = ` / ${dealerHandValue - 10}`;
-                            }
-                        }
-                    }
+                    [playerHandValue, acePlayerHandValue] = adjustHandValue(playerHandValue, bj.playerHand, acePlayerHandValue);
+                    [dealerHandValue, aceDealerHandValue] = adjustHandValue(dealerHandValue, bj.dealerHand, aceDealerHandValue);
 
                     let playerHandString = bj.generateHandString(bj.playerHand);
                     let dealerHandString = bj.generateHandString(bj.dealerHand);
@@ -238,10 +178,10 @@ module.exports = {
                                 {name: `Dealer | ${dealerHandValue} - BUST`, value: dealerHandString}
                             )
                             .setColor('Blue')
-                        // @ts-ignore
-                        userInfo.balance += bet * 2;
-                        // @ts-ignore
-                        await userInfo.save().catch(():void => {});
+
+                        userInfo!.balance += bet * 2;
+
+                        await userInfo!.save().catch(():void => {});
                         return await selection.update({
                             embeds: [bjEmbed],
                             components: [],
@@ -257,10 +197,10 @@ module.exports = {
                                     {name: `Dealer | ${dealerHandValue}`, value: dealerHandString}
                                 )
                                 .setColor('Blue')
-                            // @ts-ignore
-                            userInfo.balance += bet * 2;
-                            // @ts-ignore
-                            await userInfo.save().catch(():void => {});
+
+                            userInfo!.balance += bet * 2;
+
+                            await userInfo!.save().catch(():void => {});
                             return await selection.update({
                                 embeds: [bjEmbed],
                                 components: [],
@@ -290,10 +230,10 @@ module.exports = {
                                     {name: `Dealer | ${dealerHandValue} - PUSH`, value: dealerHandString}
                                 )
                                 .setColor('Blue')
-                            // @ts-ignore
-                            userInfo.balance += bet;
-                            // @ts-ignore
-                            await userInfo.save().catch(():void => {});
+
+                            userInfo!.balance += bet;
+                            await userInfo!.save().catch(():void => {});
+
                             return await selection.update({
                                 embeds: [bjEmbed],
                                 components: [],
@@ -311,4 +251,43 @@ module.exports = {
         }
 
     }
+}
+
+function createBlackjackEmbed(playerValue: number, dealerValue: number, playerHand: string, dealerHand: string, playerStatus: string = '', dealerStatus: string = ''): EmbedBuilder {
+    return new EmbedBuilder()
+        .setTitle('Game of Blackjack!')
+        .addFields(
+            {name: `You | ${playerValue} ${playerStatus}`, value: playerHand},
+            {name: `Dealer | ${dealerValue} ${dealerStatus}`, value: dealerHand}
+        )
+        .setColor('Blue');
+}
+
+function adjustForAces(hand: Card[], value: number): number {
+    for (let card of hand) {
+        if (card.symbol === 'A' && value > 21) {
+            value -= 10;
+        }
+    }
+    return value;
+}
+
+
+function adjustHandValue(handValue: number, hand: Card[], aceValue: string): [number, string] {
+
+    if (handValue > 21) {
+        for (let i in hand) {
+            if (hand[i].symbol === 'A') {
+                handValue -= 10;
+            }
+        }
+    } else {
+        for (let i in hand) {
+            if (hand[i].symbol === 'A') {
+                aceValue = ` / ${handValue - 10}`;
+            }
+        }
+    }
+
+    return [handValue, aceValue];
 }

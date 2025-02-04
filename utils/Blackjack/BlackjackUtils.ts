@@ -27,7 +27,7 @@ export class BlackjackUtils {
     }
 
 
-    getValue(hand: object[]) : number {
+    getValue(hand: Card[]) : number {
 
         // @ts-ignore
         return hand.map(c => +c.value).reduce((p,v) => p+v);
@@ -35,9 +35,9 @@ export class BlackjackUtils {
 
     }
 
-    deal(hand: object[], numCards : number) : void {
+    deal(hand: Card[], numCards : number) : void {
 
-        let dealt : object[] = this.cards.deal(numCards);
+        let dealt : Card[] = this.cards.deal(numCards);
 
         for(let i = 0; i < numCards; i++) {
             hand.push(dealt[i]);
@@ -45,7 +45,7 @@ export class BlackjackUtils {
     }
 
 
-    generateHandString(hand: object[]): string {
+    generateHandString(hand: Card[]): string {
 
         let toReturn:string = ``;
 

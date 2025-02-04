@@ -7,9 +7,7 @@ export interface Card {
     symbol: string;
 }
 
-
 export class CardUtils {
-
 
     public deck: Card[];
     public dealt_cards : Card[];
