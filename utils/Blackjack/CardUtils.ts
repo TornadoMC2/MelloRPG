@@ -25,7 +25,7 @@ export class CardUtils {
             let name: string = value + ' of ' + suit;
             if (value.toUpperCase().includes('J') || value.toUpperCase().includes('Q') || value.toUpperCase().includes('K')) value = '10';
             if (value.toUpperCase().includes('A')) value = '11';
-            return { 'name': name, 'suit': suit, 'value': value, 'symbol': name.charAt(0).toUpperCase() }
+            return { 'name': name, 'suit': suit, 'value': value, 'symbol': value === '10' ? '10' : name.charAt(0).toUpperCase() }
         }
 
         let values: string[] = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'];

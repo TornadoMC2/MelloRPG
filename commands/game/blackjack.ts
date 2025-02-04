@@ -19,7 +19,7 @@ module.exports = {
                 .setDescription('The amount to bet')
                 .setRequired(true)),
     async execute(interaction: CommandInteraction): Promise<void> {
-        
+
         let userInfo = await UserInfo.findOne({uid: interaction.user.id});
 
         if(!userInfo) {
@@ -89,7 +89,15 @@ module.exports = {
 
         let stand : ButtonBuilder = new ButtonBuilder().setCustomId('stand').setLabel('Stand').setStyle(ButtonStyle.Secondary)
 
-        let buttonRow : any = new ActionRowBuilder().addComponents(hit, stand)
+        let split : ButtonBuilder = new ButtonBuilder().setCustomId('split').setLabel('Split').setStyle(ButtonStyle.Success)
+
+        let buttonRow : any;
+
+        if(bj.playerHand[0].symbol === bj.playerHand[1].symbol) {
+            buttonRow = new ActionRowBuilder().addComponents(hit, stand, split)
+        } else {
+            buttonRow = new ActionRowBuilder().addComponents(hit, stand)
+        }
 
         let response = await interaction.reply({
             embeds: [bjEmbed],
@@ -242,7 +250,156 @@ module.exports = {
                         }
                     }
 
+                } else if (selection.customId === 'split') {
+                    // --- Cancel the original collector by removing the original components ---
+                    await selection.update({components: []});
+
+                    // --- SPLIT LOGIC ---
+                    // Create two split hands from the two identical cards
+                    const firstCard = bj.playerHand[0];
+                    const secondCard = bj.playerHand[1];
+                    let playerHands: Card[][] = [[firstCard], [secondCard]];
+
+                    // Deduct an extra bet for playing a second hand.
+                    // (This is standard for splits.)
+                    userInfo!.balance -= bet;
+                    await userInfo!.save().catch(() => {
+                    });
+
+                    // For each split hand, deal one extra card.
+                    bj.deal(playerHands[0], 1);
+                    bj.deal(playerHands[1], 1);
+
+                    // Set which hand is active. (0 = first hand; 1 = second hand.)
+                    let activeHandIndex = 0;
+                    let handInPlay = true;
+
+                    // Create new action row with buttons for the split game.
+                    // Note: We use custom IDs that are different from the non-split ones.
+                    const hitButton = new ButtonBuilder()
+                        .setCustomId('split_hit')
+                        .setLabel('Hit')
+                        .setStyle(ButtonStyle.Primary);
+                    const standButton = new ButtonBuilder()
+                        .setCustomId('split_stand')
+                        .setLabel('Stand')
+                        .setStyle(ButtonStyle.Secondary);
+                    const splitRow = new ActionRowBuilder<ButtonBuilder>().addComponents(hitButton, standButton);
+
+                    // Main loop for playing each of the split hands sequentially.
+                    while (handInPlay) {
+                        // Build embed fields for each hand, adding an arrow emoji for the active one.
+                        const arrow : string = '➡️';
+                        let fields: { name: string; value: string; inline?: boolean; }[] = [];
+                        for (let i = 0; i < playerHands.length; i++) {
+                            let handValue = bj.getValue(playerHands[i]);
+                            let handStr = bj.generateHandString(playerHands[i]);
+                            let title = `Hand ${i + 1} | ${handValue}`;
+                            if (i === activeHandIndex) {
+                                title = `${arrow} ${title}`;
+                            }
+                            fields.push({name: title, value: handStr, inline: true});
+                        }
+
+                        // Also include the dealer’s current hand.
+                        let dealerValue = bj.getValue(bj.dealerHand);
+                        let dealerHandStr = bj.generateHandString(bj.dealerHand);
+                        fields.push({name: `Dealer | ${dealerValue}`, value: dealerHandStr});
+
+                        let splitEmbed = new EmbedBuilder()
+                            .setTitle('Game of Blackjack! (Split)')
+                            .addFields(fields)
+                            .setColor('Blue');
+
+                        // Update the reply with the new embed and split buttons.
+                        // (Because we use editReply, the original collector is no longer listening.)
+                        const splitResponse = await interaction.editReply({
+                            embeds: [splitEmbed],
+                            components: [splitRow],
+                        });
+
+                        // Wait for the player to choose an action on the active hand.
+                        const splitSelection = await splitResponse.awaitMessageComponent({
+                            filter: (i) => i.user.id === interaction.user.id,
+                            time: 60_000,
+                        });
+
+                        if (splitSelection.customId === 'split_hit') {
+                            // Deal one card to the active hand.
+                            bj.deal(playerHands[activeHandIndex], 1);
+                            let handValue = bj.getValue(playerHands[activeHandIndex]);
+                            // If the active hand busts, automatically move to the next hand.
+                            if (handValue > 21) {
+                                activeHandIndex++;
+                            }
+                            // Acknowledge the action (using deferUpdate avoids multiple replies).
+                            await splitSelection.deferUpdate();
+                        } else if (splitSelection.customId === 'split_stand') {
+                            // When the player stands, move to the next hand.
+                            activeHandIndex++;
+                            await splitSelection.deferUpdate();
+                        }
+
+                        // Once we've processed both hands, exit the loop.
+                        if (activeHandIndex >= playerHands.length) {
+                            handInPlay = false;
+                        }
+                    }
+
+                    // --- Dealer’s Turn ---
+                    let dealerValue = bj.getValue(bj.dealerHand);
+                    while (dealerValue < 17) {
+                        bj.deal(bj.dealerHand, 1);
+                        dealerValue = bj.getValue(bj.dealerHand);
+                    }
+                    let dealerHandStr = bj.generateHandString(bj.dealerHand);
+
+                    // --- Build Final Results Embed ---
+                    let finalFields: { name: string; value: string; inline?: boolean }[] = [];
+                    for (let i = 0; i < playerHands.length; i++) {
+                        let handValue = bj.getValue(playerHands[i]);
+                        let handStr = bj.generateHandString(playerHands[i]);
+                        let result = '';
+                        if (handValue > 21) {
+                            result = 'BUST';
+                        } else if (dealerValue > 21 || handValue > dealerValue) {
+                            result = 'WINNER';
+                            // For a win, pay out double for that hand.
+                            userInfo!.balance += bet * 2;
+                        } else if (handValue < dealerValue) {
+                            result = 'LOSE';
+                        } else {
+                            result = 'PUSH';
+                            // For a push, refund the bet.
+                            userInfo!.balance += bet;
+                        }
+                        finalFields.push({
+                            name: `Hand ${i + 1} | ${handValue} - ${result}`,
+                            value: handStr,
+                        });
+                    }
+                    // Also include the dealer’s final hand.
+                    finalFields.push({
+                        name: `Dealer | ${dealerValue}`,
+                        value: dealerHandStr,
+                        inline: false,
+                    });
+
+                    await userInfo!.save().catch(() => {
+                    });
+
+                    let finalEmbed = new EmbedBuilder()
+                        .setTitle('Final Results (Split)')
+                        .addFields(finalFields)
+                        .setColor('Blue');
+
+                    await interaction.editReply({
+                        embeds: [finalEmbed],
+                        components: [],
+                    });
+                    return;
                 }
+
                 playerHandValue = bj.getValue(bj.playerHand)
                 dealerHandValue = bj.getValue(bj.dealerHand)
             }

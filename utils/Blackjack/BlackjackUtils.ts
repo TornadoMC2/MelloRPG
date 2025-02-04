@@ -51,7 +51,7 @@ export class BlackjackUtils {
 
         for(let i = 0; i < hand.length; i++) {
             // @ts-ignore
-            toReturn += `${EmojiUtils.nums[hand[i].value.toString()]}${EmojiUtils.suits[hand[i].suit.toLowerCase()]}`;
+            toReturn += `${EmojiUtils.nums[hand[i].symbol.toString()]}${EmojiUtils.suits[hand[i].suit.toLowerCase()]}`;
             if(i !== hand.length - 1) toReturn += `and `;
         }
 

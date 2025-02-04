@@ -22,10 +22,10 @@ module.exports = {
 
         if(!userInfo) {
             const newUser = new UserInfo({
-                uid: interaction.user.id,
+                uid: user.id,
             })
             await newUser.save().catch(() : void => {});
-            userInfo = await UserInfo.findOne({uid: interaction.user.id});
+            userInfo = await UserInfo.findOne({uid: user.id});
         }
         // @ts-ignore
         userInfo.balance += amount;
