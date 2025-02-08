@@ -1,4 +1,4 @@
-import { CommandInteraction, SlashCommandBuilder } from "discord.js";
+import {CommandInteraction, EmbedBuilder, SlashCommandBuilder} from "discord.js";
 import UserInfo from "../../models/userInfo";
 import { currencyFormatter } from "../../utils/CurrencyUtils";
 
@@ -17,10 +17,15 @@ module.exports = {
             await newUser.save().catch(() : void => {});
             userInfo = await UserInfo.findOne({uid: interaction.user.id});
         }
-        // @ts-ignore
-        let balance : number = userInfo.balance;
+        let balance : number = userInfo!.balance;
 
-        await interaction.reply({content: `Your balance is: \`${currencyFormatter.format(balance)}\``, ephemeral: true});
+
+        let balanceEmbed = new EmbedBuilder()
+            .setColor("Blurple")
+            .setTitle("Balance")
+            .addFields({ name: "Your balance is:", value: `\`${currencyFormatter.format(balance)}\`` });
+
+        await interaction.reply({embeds: [balanceEmbed], ephemeral: true});
 
     }
 }

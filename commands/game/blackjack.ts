@@ -3,7 +3,7 @@ import {
     CommandInteraction,
     EmbedBuilder,
     SlashCommandBuilder,
-    ButtonStyle, ActionRow, ActionRowBuilder
+    ButtonStyle, ActionRowBuilder
 } from "discord.js";
 import {BlackjackUtils} from "../../utils/Blackjack/BlackjackUtils";
 import UserInfo from "../../models/userInfo";
@@ -251,40 +251,32 @@ module.exports = {
                     }
 
                 } else if (selection.customId === 'split') {
-                    // --- Cancel the original collector by removing the original components ---
+
                     await selection.update({components: []});
 
-                    // --- SPLIT LOGIC ---
-                    // Create two split hands from the two identical cards
-                    const firstCard = bj.playerHand[0];
-                    const secondCard = bj.playerHand[1];
+                    const firstCard: Card = bj.playerHand[0];
+                    const secondCard: Card = bj.playerHand[1];
                     let playerHands: Card[][] = [[firstCard], [secondCard]];
 
-                    // Deduct an extra bet for playing a second hand.
-                    // (This is standard for splits.)
                     userInfo!.balance -= bet;
-                    await userInfo!.save().catch(() => {
-                    });
+                    await userInfo!.save().catch(() => {});
 
-                    // For each split hand, deal one extra card.
                     bj.deal(playerHands[0], 1);
                     bj.deal(playerHands[1], 1);
 
-                    // Set which hand is active. (0 = first hand; 1 = second hand.)
-                    let activeHandIndex = 0;
-                    let handInPlay = true;
+                    // (0 = first hand; 1 = second hand.)
+                    let activeHandIndex: number = 0;
+                    let handInPlay: boolean = true;
 
-                    // Create new action row with buttons for the split game.
-                    // Note: We use custom IDs that are different from the non-split ones.
-                    const hitButton = new ButtonBuilder()
+                    const hitButton: ButtonBuilder = new ButtonBuilder()
                         .setCustomId('split_hit')
                         .setLabel('Hit')
                         .setStyle(ButtonStyle.Primary);
-                    const standButton = new ButtonBuilder()
+                    const standButton: ButtonBuilder = new ButtonBuilder()
                         .setCustomId('split_stand')
                         .setLabel('Stand')
                         .setStyle(ButtonStyle.Secondary);
-                    const splitRow = new ActionRowBuilder<ButtonBuilder>().addComponents(hitButton, standButton);
+                    const splitRow : any = new ActionRowBuilder().addComponents(hitButton, standButton);
 
                     // Main loop for playing each of the split hands sequentially.
                     while (handInPlay) {
@@ -293,16 +285,28 @@ module.exports = {
                         let fields: { name: string; value: string; inline?: boolean; }[] = [];
                         for (let i = 0; i < playerHands.length; i++) {
                             let handValue = bj.getValue(playerHands[i]);
+
+                            // Adjust for Aces
+                            // use adjustHandValue function to adjust the hand value and get the ace value string
+                            let aceValue = '';
+                            [handValue, aceValue] = adjustHandValue(handValue, playerHands[i], aceValue);
+
                             let handStr = bj.generateHandString(playerHands[i]);
                             let title = `Hand ${i + 1} | ${handValue}`;
                             if (i === activeHandIndex) {
                                 title = `${arrow} ${title}`;
                             }
-                            fields.push({name: title, value: handStr, inline: true});
+                            fields.push({name: title, value: `${handStr}${aceValue}`, inline: true});
                         }
 
                         // Also include the dealer’s current hand.
                         let dealerValue = bj.getValue(bj.dealerHand);
+
+                        // Adjust for Aces
+                        // use adjustHandValue function to adjust the hand value and get the ace value string
+                        let aceValue = '';
+                        [dealerValue, aceValue] = adjustHandValue(dealerValue, bj.dealerHand, aceValue);
+
                         let dealerHandStr = bj.generateHandString(bj.dealerHand);
                         fields.push({name: `Dealer | ${dealerValue}`, value: dealerHandStr});
 
@@ -327,8 +331,9 @@ module.exports = {
                         if (splitSelection.customId === 'split_hit') {
                             // Deal one card to the active hand.
                             bj.deal(playerHands[activeHandIndex], 1);
-                            let handValue = bj.getValue(playerHands[activeHandIndex]);
+                            let handValue: number = bj.getValue(playerHands[activeHandIndex]);
                             // If the active hand busts, automatically move to the next hand.
+                            handValue = adjustHandValue(handValue, playerHands[activeHandIndex], aceValue)[0];
                             if (handValue > 21) {
                                 activeHandIndex++;
                             }
@@ -376,6 +381,7 @@ module.exports = {
                         finalFields.push({
                             name: `Hand ${i + 1} | ${handValue} - ${result}`,
                             value: handStr,
+                            inline: true,
                         });
                     }
                     // Also include the dealer’s final hand.
@@ -385,8 +391,7 @@ module.exports = {
                         inline: false,
                     });
 
-                    await userInfo!.save().catch(() => {
-                    });
+                    await userInfo!.save().catch(() => {});
 
                     let finalEmbed = new EmbedBuilder()
                         .setTitle('Final Results (Split)')
@@ -408,25 +413,6 @@ module.exports = {
         }
 
     }
-}
-
-function createBlackjackEmbed(playerValue: number, dealerValue: number, playerHand: string, dealerHand: string, playerStatus: string = '', dealerStatus: string = ''): EmbedBuilder {
-    return new EmbedBuilder()
-        .setTitle('Game of Blackjack!')
-        .addFields(
-            {name: `You | ${playerValue} ${playerStatus}`, value: playerHand},
-            {name: `Dealer | ${dealerValue} ${dealerStatus}`, value: dealerHand}
-        )
-        .setColor('Blue');
-}
-
-function adjustForAces(hand: Card[], value: number): number {
-    for (let card of hand) {
-        if (card.symbol === 'A' && value > 21) {
-            value -= 10;
-        }
-    }
-    return value;
 }
 
 

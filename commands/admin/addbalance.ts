@@ -1,5 +1,6 @@
 import {CommandInteraction, SlashCommandBuilder, User} from "discord.js";
 import UserInfo from "../../models/userInfo";
+import {currencyFormatter} from "../../utils/CurrencyUtils";
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,7 +33,7 @@ module.exports = {
         // @ts-ignore
         await userInfo.save().catch(() : void => {});
 
-        await interaction.reply({content: `Added \`${amount}\` to \`${user.username}\`'s balance.`, ephemeral: true});
+        await interaction.reply({content: `Added \`${currencyFormatter.format(amount)}\` to \`${user.username}\`'s balance.`, ephemeral: true});
 
     }
 }
