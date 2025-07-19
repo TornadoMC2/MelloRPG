@@ -133,3 +133,4 @@ dist
 # ignore .js since using typescript
 *.js
 token.json
+secrets.json
